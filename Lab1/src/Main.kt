@@ -25,21 +25,11 @@ fun calculateCallCost(
 
 private fun money(value: Double): String = String.format(Locale.US, "%.2f ₽", value)
 
-fun main(args: Array<String>) {
+private fun runCall(tariff: String, initialBalance: Double, durationSeconds: Int, discountPercent: Int = 0) {
     val phoneNumber = "+79991234567"
-    val tariff: String
-    var balance: Double
-    val durationSeconds: Int
-    val discountPercent: Int
+    var balance = initialBalance
 
     try {
-        require(args.size == 0 || args.size == 3 || args.size == 4) {
-            "аргументы: <тариф> <баланс> <секунды> [скидка_%]"
-        }
-        tariff = args.getOrNull(0) ?: "STANDARD"
-        balance = args.getOrNull(1)?.toDouble() ?: 100.0
-        durationSeconds = args.getOrNull(2)?.toInt() ?: 125
-        discountPercent = args.getOrNull(3)?.toInt() ?: 0
         require(balance >= 0 && balance.isFinite()) { "некорректный баланс" }
 
         val pricePerMinute = getPricePerMinute(tariff)
@@ -53,6 +43,9 @@ fun main(args: Array<String>) {
         println("Тарифицируемая продолжительность: $chargedMinutes мин.")
         println("Стоимость минуты: ${money(pricePerMinute)}")
         println("Скидка: $discountPercent%")
+        if (discountPercent > 0) {
+            println("Стоимость без скидки: ${money(calculateCallCost(chargedMinutes, pricePerMinute))}")
+        }
         println("Стоимость вызова: ${money(callCost)}")
         println("Баланс до вызова: ${money(balance)}")
 
@@ -68,6 +61,38 @@ fun main(args: Array<String>) {
             println("Статус: REJECTED")
         }
         println("=====================================")
+    } catch (error: IllegalArgumentException) {
+        println("Ошибка тарификации: ${error.message}")
+    }
+}
+
+fun main(args: Array<String>) {
+    if (args.isEmpty()) {
+        println("Самостоятельная проверка")
+        println("1. STANDARD, 100 ₽, 125 сек. — списание 6 ₽")
+        runCall("STANDARD", 100.0, 125)
+        println("\n2. START, 100 ₽, 60 сек. — списание 3 ₽")
+        runCall("START", 100.0, 60)
+        println("\n3. PREMIUM, 10 ₽, 121 сек. — списание 3 ₽")
+        runCall("PREMIUM", 10.0, 121)
+        println("\n4. STANDARD, 1 ₽, 61 сек. — недостаточно средств")
+        runCall("STANDARD", 1.0, 61)
+        println("\n5. STANDARD, 100 ₽, 0 сек. — стоимость 0 ₽")
+        runCall("STANDARD", 100.0, 0)
+        println("\n6. UNKNOWN, 100 ₽, 60 сек. — ошибка тарифа")
+        runCall("UNKNOWN", 100.0, 60)
+        println("\nДополнительное задание: STANDARD, 10 мин., скидка 20% — стоимость 16 ₽")
+        runCall("STANDARD", 100.0, 600, 20)
+        println("\nПроверка некорректной скидки: 120%")
+        runCall("STANDARD", 100.0, 60, 120)
+        return
+    }
+
+    try {
+        require(args.size == 3 || args.size == 4) {
+            "аргументы: <тариф> <баланс> <секунды> [скидка_%]"
+        }
+        runCall(args[0], args[1].toDouble(), args[2].toInt(), args.getOrNull(3)?.toInt() ?: 0)
     } catch (error: IllegalArgumentException) {
         println("Ошибка тарификации: ${error.message}")
     }

@@ -94,6 +94,7 @@ private fun printBilling(subscriber: Subscriber, result: BillingResult) {
     println("Тарифицируемая продолжительность: ${result.chargedMinutes} мин.")
     println("Стоимость вызова: ${money(result.callCost)}")
     println("Счёт: ${subscriber.account.accountNumber}")
+    println("Состояние счёта: ${subscriber.account.state}")
     println("Баланс до: ${money(result.balanceBefore)}")
     println("Баланс после: ${money(result.balanceAfter)}")
     when (result.status) {
@@ -110,6 +111,11 @@ private fun printBilling(subscriber: Subscriber, result: BillingResult) {
     }
 }
 
+private fun showScenario(title: String, subscriber: Subscriber, durationSeconds: Int) {
+    println("\n$title")
+    printBilling(subscriber, billCall(subscriber, durationSeconds))
+}
+
 fun main() {
     val subscribers = listOf(
         Subscriber(
@@ -123,9 +129,33 @@ fun main() {
     )
 
     println("========== TELECOM BILLING ==========")
-    subscribers.forEachIndexed { index, subscriber ->
-        if (index > 0) println("-------------------------------------")
-        printBilling(subscriber, billCall(subscriber, 125))
+    println("Контрольный сценарий: одинаковый звонок, разные тарифы")
+    subscribers.forEach { subscriber ->
+        showScenario(subscriber.tariff.name, subscriber, 125)
     }
+
+    val startSubscriber = Subscriber(
+        1003, "Тестовый абонент START", "+79990000003", null,
+        Tariff.START, Account("ACC-1003", 100.0)
+    )
+    showScenario("Проверка START: 125 сек. — стоимость 9 ₽", startSubscriber, 125)
+
+    val lowBalanceSubscriber = Subscriber(
+        1004, "Недостаточный баланс", "+79990000004", null,
+        Tariff.STANDARD, Account("ACC-1004", 1.0)
+    )
+    showScenario("Недостаточно средств: 1 ₽ на счёте, стоимость 6 ₽", lowBalanceSubscriber, 125)
+
+    val zeroDurationSubscriber = Subscriber(
+        1005, "Нулевая длительность", "+79990000005", null,
+        Tariff.STANDARD, Account("ACC-1005", 100.0)
+    )
+    showScenario("Нулевой звонок: 0 сек. — стоимость 0 ₽", zeroDurationSubscriber, 0)
+
+    val blockedSubscriber = Subscriber(
+        1006, "Заблокированный счёт", "+79990000006", null,
+        Tariff.STANDARD, Account("ACC-1006", 100.0, AccountState.BLOCKED)
+    )
+    showScenario("Дополнительное задание: BLOCKED — списание запрещено", blockedSubscriber, 125)
     println("=====================================")
 }
