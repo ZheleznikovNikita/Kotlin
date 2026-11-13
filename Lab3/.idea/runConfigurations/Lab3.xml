@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Lab3" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="lab03.MainKt" />
+    <module name="Lab3" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>
